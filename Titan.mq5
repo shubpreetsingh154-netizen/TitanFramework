@@ -28,11 +28,12 @@ bool UseBreakoutStrike = false;
 
 bool UseStealthMode = true;
 
-void OnInit()
+int OnInit()
 {
    Print("🛡️ Titan EA Initialized");
    LoadConfig(ConfigFile);
    InitializeModules();
+   return INIT_SUCCEEDED;
 }
 
 void OnTick()
@@ -51,7 +52,6 @@ void OnTick()
 void LoadConfig(string file)
 {
    // Placeholder: Load settings from Titan.cfg
-   // For now, values are hardcoded above
 }
 
 void InitializeModules()
@@ -73,7 +73,7 @@ bool CheckAllFilters()
 
 bool ShouldTrade(string symbol)
 {
-   MarkSignalTime(); // Timestamp for TimeDecay
+   MarkSignalTime();
 
    bool signal = false;
    if(UseTrendSniper) signal = TrendSniperSignal(symbol);
@@ -87,21 +87,39 @@ bool ShouldTrade(string symbol)
 
 void ExecuteTrade(string symbol, double lot)
 {
-   int direction = OP_BUY; // Placeholder — tu chahe toh strategy se derive kar sakta hai
+   int direction = OP_BUY; // Placeholder
    direction = ApplyReverseLogic(direction);
+
+   MqlTradeRequest request;
+   MqlTradeResult result;
+   ZeroMemory(request);
+
+   request.action   = TRADE_ACTION_DEAL;
+   request.symbol   = symbol;
+   request.volume   = lot;
+   request.type     = (direction == OP_BUY) ? ORDER_TYPE_BUY : ORDER_TYPE_SELL;
+   request.price    = (direction == OP_BUY) ? SymbolInfoDouble(symbol, SYMBOL_ASK) : SymbolInfoDouble(symbol, SYMBOL_BID);
+   request.deviation= 10;
+   request.magic    = 123456;
+   request.comment  = "Titan";
 
    if(UseStealthMode)
       ExecuteStealthTrade(symbol, lot, direction);
    else
-      OrderSend(symbol, direction, lot, Ask, 3, 0, 0, "Titan", 0, clrGreen);
+   {
+      if(!OrderSend(request, result))
+         Print("❌ Trade failed: ", result.retcode);
+      else
+         Print("✅ Trade executed: ", result.order);
+   }
 }
 
 double CalculateLotSize(string symbol)
 {
    double equity = AccountInfoDouble(ACCOUNT_EQUITY);
    double riskAmount = equity * RiskPerTradePercent / 100;
-   double stopLossPoints = 50; // Placeholder SL
-   double tickValue = MarketInfo(symbol, MODE_TICKVALUE);
+   double stopLossPoints = 50;
+   double tickValue = SymbolInfoDouble(symbol, SYMBOL_TRADE_TICK_VALUE);
    double lotSize = riskAmount / (stopLossPoints * tickValue);
 
    if(lotSize < 0.01) lotSize = 0.01;
