@@ -1,4 +1,5 @@
 #property strict
+
 #include <Modules/DrawdownGuard.mqh>
 #include <Modules/SessionFilter.mqh>
 #include <Modules/VolatilityShield.mqh>
@@ -16,6 +17,16 @@
 #include <Strategies/BreakoutStrike.mqh>
 
 input string ConfigFile = "Titan.cfg";
+
+double InitialCapital = 1000;
+double RiskPerTradePercent = 2;
+double DefaultLotSize = 0.02;
+
+bool UseTrendSniper = true;
+bool UseReversalHunter = true;
+bool UseBreakoutStrike = false;
+
+bool UseStealthMode = true;
 
 void OnInit()
 {
@@ -40,6 +51,7 @@ void OnTick()
 void LoadConfig(string file)
 {
    // Placeholder: Load settings from Titan.cfg
+   // For now, values are hardcoded above
 }
 
 void InitializeModules()
@@ -52,18 +64,48 @@ bool CheckAllFilters()
    return DrawdownGuardCheck() &&
           SessionFilterCheck() &&
           VolatilityShieldCheck() &&
+          TradeLimiterCheck() &&
+          CapitalProtectorCheck() &&
           NewsFilterCheck() &&
-          EquityStopCheck();
+          EquityStopCheck() &&
+          IsSymbolEligible(Symbol());
 }
 
 bool ShouldTrade(string symbol)
 {
-   // Placeholder: Strategy logic per symbol
+   MarkSignalTime(); // Timestamp for TimeDecay
+
+   bool signal = false;
+   if(UseTrendSniper) signal = TrendSniperSignal(symbol);
+   if(UseReversalHunter) signal = ReversalHunterSignal(symbol);
+   if(UseBreakoutStrike) signal = BreakoutStrikeSignal(symbol);
+
+   if(!signal || !TimeDecayCheck()) return false;
+
    return true;
 }
 
 void ExecuteTrade(string symbol, double lot)
 {
-   // Placeholder: OrderSend logic with StealthMode
-   Print("Executing trade on ", symbol, " with lot size ", lot);
+   int direction = OP_BUY; // Placeholder — tu chahe toh strategy se derive kar sakta hai
+   direction = ApplyReverseLogic(direction);
+
+   if(UseStealthMode)
+      ExecuteStealthTrade(symbol, lot, direction);
+   else
+      OrderSend(symbol, direction, lot, Ask, 3, 0, 0, "Titan", 0, clrGreen);
+}
+
+double CalculateLotSize(string symbol)
+{
+   double equity = AccountInfoDouble(ACCOUNT_EQUITY);
+   double riskAmount = equity * RiskPerTradePercent / 100;
+   double stopLossPoints = 50; // Placeholder SL
+   double tickValue = MarketInfo(symbol, MODE_TICKVALUE);
+   double lotSize = riskAmount / (stopLossPoints * tickValue);
+
+   if(lotSize < 0.01) lotSize = 0.01;
+   if(lotSize > 2.0) lotSize = 2.0;
+
+   return NormalizeDouble(lotSize, 2);
 }
