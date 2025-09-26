@@ -1,24 +1,25 @@
 #ifndef __STEALTH_MODE__
 #define __STEALTH_MODE__
 
-bool UseStealthMode = true;
-
-bool ExecuteStealthTrade(string symbol, double lot, int direction)
+void ExecuteStealthTrade(string symbol, double lot, int direction)
 {
-   double price = (direction == OP_BUY) ? MarketInfo(symbol, MODE_ASK) : MarketInfo(symbol, MODE_BID);
-   double sl = 0; // Hidden stop loss
-   double tp = 0; // Hidden take profit
+   MqlTradeRequest request;
+   MqlTradeResult result;
+   ZeroMemory(request);
 
-   int ticket = OrderSend(symbol, direction, lot, price, 3, sl, tp, "Titan Stealth", 0, clrNONE);
+   request.action   = TRADE_ACTION_DEAL;
+   request.symbol   = symbol;
+   request.volume   = lot;
+   request.type     = (direction == OP_BUY) ? ORDER_TYPE_BUY : ORDER_TYPE_SELL;
+   request.price    = (direction == OP_BUY) ? SymbolInfoDouble(symbol, SYMBOL_ASK) : SymbolInfoDouble(symbol, SYMBOL_BID);
+   request.deviation= 10;
+   request.magic    = 987654;
+   request.comment  = "Titan Stealth";
 
-   if(ticket < 0)
-   {
-      Print("❌ StealthMode failed: ", GetLastError());
-      return false;
-   }
-
-   Print("✅ Stealth trade executed: ", symbol, " Lot=", lot);
-   return true;
+   if(!OrderSend(request, result))
+      Print("❌ StealthMode: Trade failed - ", result.retcode);
+   else
+      Print("🕶️ StealthMode: Trade executed - Order #", result.order);
 }
 
 #endif
