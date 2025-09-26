@@ -3,17 +3,13 @@
 
 bool EnableReverseLogic = false;
 
-int ApplyReverseLogic(int originalSignal)
+int ApplyReverseLogic(int direction)
 {
-   if(!EnableReverseLogic)
-      return originalSignal;
+   if(!EnableReverseLogic) return direction;
 
-   if(originalSignal == OP_BUY)
-      return OP_SELL;
-   else if(originalSignal == OP_SELL)
-      return OP_BUY;
-
-   return originalSignal;
+   int reversed = (direction == OP_BUY) ? OP_SELL : OP_BUY;
+   Print("🔁 ReverseLogic: Direction flipped from ", direction, " to ", reversed);
+   return reversed;
 }
 
 #endif
