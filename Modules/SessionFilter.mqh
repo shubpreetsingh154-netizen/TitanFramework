@@ -1,21 +1,21 @@
 #ifndef __SESSION_FILTER__
 #define __SESSION_FILTER__
 
-datetime sessionStart = D'1970.01.01 08:00'; // 8 AM server time
-datetime sessionEnd   = D'1970.01.01 18:00'; // 6 PM server time
+datetime sessionStart = D'2024.01.01 09:00';
+datetime sessionEnd   = D'2024.01.01 17:00';
 
 bool SessionFilterCheck()
 {
    datetime now = TimeCurrent();
-   int hour = TimeHour(now);
 
-   if(hour < TimeHour(sessionStart) || hour > TimeHour(sessionEnd))
+   if(now >= sessionStart && now <= sessionEnd)
    {
-      Print("⏳ SessionFilter blocked trade: Outside active hours");
-      return false;
+      Print("🕒 SessionFilter: Within trading session");
+      return true;
    }
 
-   return true;
+   Print("⛔ SessionFilter: Outside trading session");
+   return false;
 }
 
 #endif
