@@ -3,26 +3,23 @@
 
 bool BreakoutStrikeSignal(string symbol)
 {
-   double high = iHigh(symbol, PERIOD_H1, 1);
-   double low  = iLow(symbol, PERIOD_H1, 1);
-   double current = iClose(symbol, 0, 0);
+   double prevHigh = iHigh(symbol, PERIOD_CURRENT, 1);
+   double prevLow  = iLow(symbol, PERIOD_CURRENT, 1);
+   double currentPrice = SymbolInfoDouble(symbol, SYMBOL_BID);
 
-   double range = high - low;
-
-   if(range < 50 * Point) // Tight range condition
+   if(currentPrice > prevHigh)
    {
-      if(current > high)
-      {
-         Print("🚀 BreakoutStrike: BUY breakout on ", symbol);
-         return true;
-      }
-      else if(current < low)
-      {
-         Print("💥 BreakoutStrike: SELL breakout on ", symbol);
-         return true;
-      }
+      Print("🚀 BreakoutStrike: Bullish breakout detected");
+      return true;
    }
 
+   if(currentPrice < prevLow)
+   {
+      Print("🚀 BreakoutStrike: Bearish breakout detected");
+      return true;
+   }
+
+   Print("🚀 BreakoutStrike: No breakout");
    return false;
 }
 

@@ -1,20 +1,17 @@
 #ifndef __VOLATILITY_SHIELD__
 #define __VOLATILITY_SHIELD__
 
-double MaxSpread = 25; // in points
-double MaxSlippage = 5;
-
 bool VolatilityShieldCheck()
 {
-   double spread = (MarketInfo(Symbol(), MODE_SPREAD));
-   double slippage = MarketInfo(Symbol(), MODE_SLIPPAGE);
+   double atr = iATR(Symbol(), PERIOD_M15, 14, 0);
 
-   if(spread > MaxSpread || slippage > MaxSlippage)
+   if(atr > 50 * Point)
    {
-      Print("⚠️ VolatilityShield triggered: Spread=", spread, " Slippage=", slippage);
+      Print("⛔ VolatilityShield: ATR too high (", atr, ")");
       return false;
    }
 
+   Print("✅ VolatilityShield: ATR acceptable (", atr, ")");
    return true;
 }
 
